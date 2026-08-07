@@ -10,6 +10,12 @@ class UserResponse(BaseModel):
     id:int
     created_at:datetime
     model_config = ConfigDict(from_attributes=True)
+
+class UserOut(BaseModel):
+    id:int
+    email:EmailStr
+    created_at:datetime
+    model_config = ConfigDict(from_attributes=True)
 class PostBase(BaseModel):
     title:str
     content:str
