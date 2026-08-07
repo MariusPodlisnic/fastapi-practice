@@ -1,8 +1,8 @@
 import pytest
 from fastapi import status
 from app import schemas
-from .database import client,session
-
+from jose import jwt
+from app.config import settings
 @pytest.fixture
 def test_user(client):
     user_data = {'email':"heyholetsgo@gmail.com",'password':"1234asf"}
@@ -19,3 +19,21 @@ def test_create_user(client):
 
 def test_login_user(client,test_user):
     res = client.post("/login", data={"username": test_user['email'], "password": test_user['password']})
+    login_res = schemas.Token(**res.json())
+    payload = jwt.decode(login_res.token,settings.secret_key,algorithms=[settings.algorithm])
+    id = payload.get("user_id")
+    assert id == test_user['id']
+    assert login_res.token_type == "bearer"
+    assert res.status_code == 202
+
+@pytest.mark.parametrize("email,password,status_code",[
+    ("wrongemail@gmail.com","1234asf",403),
+    ("heyholetsgo@gmail.com","wrongpassword",403),
+    (None,"1234asf",422),
+    ("heyholetsgo@gmail.com",None,422)
+
+])
+def test_incorrect_login(test_user,client,email,password,status_code):
+    res = client.post("/login", data = {"username":email,"password":password})
+    assert res.status_code == status_code
+
